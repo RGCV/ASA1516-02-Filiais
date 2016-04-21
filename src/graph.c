@@ -5,27 +5,30 @@
 
 #include "graph.h"
 
-struct _graph_edge {
-  graph_vertex_t u, v;
-  int w;
+struct _graph_node {
+  graph_vertex_t vertex;
+  int weight;
+  struct _graph_node *next;
 };
 
 struct _graph {
   int V, E;
-  int size;
-  graph_edge_t **edges;
+  bool weighted;
+  graph_type_e type;
+  graph_node_t **adjlist;
 };
 
-graph_t *graph_new(int V, int E) {
+graph_t *graph_new(int V, graph_type_e graph_type, bool weighted) {
   graph_t *graph = NULL;
   
   if(V > 0 &&
       (graph = (graph_t*)malloc(sizeof(struct _graph))) != NULL) {
     graph->V = V;
-    graph->size = E;
     graph->E = 0;
-    graph->edges = 
-      (graph_edge_t**)malloc(E * sizeof(struct _graph_edge*));
+    graph->type = graph_type;
+    graph->weighted = weighted;
+    graph->adjlist = 
+      (graph_node_t**)malloc(V * sizeof(struct _graph_node*));
   }
   
   return graph;
@@ -34,10 +37,15 @@ graph_t *graph_new(int V, int E) {
 void graph_free(graph_t *graph) {
   int i;
   
-  for(i = 0; i < graph->E; ++i)
-    free(graph->edges[i]);
-  
-  free(graph->edges);
+  for(i = 0; i < graph->V; ++i) {
+    graph_node_t *head = graph->adjlist[i];
+    while(head != NULL) {
+      graph_node_t *temp = head;
+      head = head->next;
+      free(temp);
+    }
+  }
+  free(graph->adjlist);
   free(graph);
 }
 
@@ -49,46 +57,92 @@ int graph_edges(graph_t *graph) {
   return graph->E;
 }
 
+bool graph_weighted(graph_t *graph) {
+  return graph->weighted;
+}
+
+graph_type_e graph_type(graph_t *graph) {
+  return graph->type;
+}
+
 void graph_add_edge(graph_t *graph, graph_vertex_t u, graph_vertex_t v,
     int w) {
-  if(graph->E < graph->size) {
-    graph_edge_t *edge = (graph_edge_t*)malloc(sizeof(struct _graph_edge));
-    if(edge != NULL) {
-      edge->u = u;
-      edge->v = v;
-      edge->w = w;
+  if((u > 0 && u <= graph->V) && (v > 0 && v <= graph->V)) {
+    graph_node_t *x = (graph_node_t*)malloc(sizeof(struct _graph_node));
+
+    if(x != NULL) {
+      x->vertex = v;
+      x->weight = graph->weighted ? w : 0;
+      x->next = graph->adjlist[u - 1];
+      graph->adjlist[u - 1] = x;
       
-      graph->edges[graph->E++] = edge;
+      if(graph->type == GRAPH_UNDIRECTED) {
+        graph_node_t *y = (graph_node_t*)malloc(sizeof(struct _graph_node));
+        
+        if(y != NULL) {
+          y->vertex = u;
+          y->weight = graph->weighted ? w : 0;
+          y->next = graph->adjlist[u - 1];
+          graph->adjlist[u - 1] = y;
+        }
+      }
     }
     else {
-      free(edge);
+      exit(EXIT_FAILURE);
     }
+    
+    graph->E++;
   }
 }
 
-void BellmanFord(graph_t *graph, graph_vertex_t s, int *d) {
-  int i, j;
-  int V = graph->V, E = graph->E;
-  
-  for(i = 0; i < V; ++i) {
-    d[i] = INT_MAX;
-  }
+void bellman_ford(graph_t *graph, graph_vertex_t s, int *d) {
+  int i, j, e;
+
+  for(i = 0; i < graph->V; ++i) d[i] = INT_MAX;
   d[s - 1] = 0;
-  
-  for(i = 0 ; i < V - 1; ++i) {
+
+  for(i = 0; i < graph->V; ++i) {
     bool changes = false;
-    
-    for(j = 0; j < E; ++j) {
-      graph_vertex_t u = graph->edges[j]->u;
-      graph_vertex_t v = graph->edges[j]->v;
-      int w = graph->edges[j]->w;
+
+    for(j = 0, e = 0; j < graph->V && e < graph->E; ++j) {
+      graph_node_t *node = graph->adjlist[j];
       
-      if(d[u - 1] != INT_MAX && d[v - 1] > d[u - 1] + w) {
-        changes = true;
-        d[v - 1] = d[u - 1] + w;
+      while(node) {
+        if(d[j] != INT_MAX && d[node->vertex - 1] > d[j] + node->weight) {
+          changes = true;
+          d[node->vertex - 1] = d[j] + node->weight;
+        }
+        ++e;
+        node = node->next;
       }
     }
-    
+
+    if(!changes) break;
+  }
+}
+
+void antibellman_ford(graph_t *graph, graph_vertex_t s, int *d) {
+  int i, j, e;
+
+  for(i = 0; i < graph->V; ++i) d[i] = INT_MAX;
+  d[s - 1] = 0;
+
+  for(i = 0; i < graph->V; ++i) {
+    bool changes = false;
+
+    for(j = 0, e = 0; j < graph->V && e < graph->E; ++j) {
+      graph_node_t *node = graph->adjlist[j];
+      
+      while(node) {
+        if(d[node->vertex - 1] != INT_MAX && d[j] > d[node->vertex - 1] + node->weight) {
+          changes = true;
+          d[j] = d[node->vertex - 1] + node->weight;
+        }
+        ++e;
+        node = node->next;
+      }
+    }
+
     if(!changes) break;
   }
 }

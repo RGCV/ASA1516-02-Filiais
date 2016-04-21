@@ -3,77 +3,76 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "graph.h"
 
 int main() {
   int V, E, S, i, j;
-  int total_cost, meeting_point;
-  int *sources, **d;
-  graph_t *graph;
+  int *d, *x;
+  int total_cost;
+  graph_vertex_t *sources, meeting_point;
+  graph_t *graph = NULL;
   
-  /* Initialization. */
+  /* Input processing / Initialization. */
   assert(scanf("%d %d %d", &V, &S, &E) == 3);
   assert(V > 1 && S > 1 && E > 0);
   
-  graph = graph_new(V, E);
+  graph = graph_new(V, GRAPH_DIRECTED, true);
   assert(graph != NULL);
   
-  sources = (int*)malloc(S * sizeof(int));
+  sources = (graph_vertex_t*)malloc(S * sizeof(graph_vertex_t));
   assert(sources != NULL);
   
   for(i = 0; i < S; ++i)
     assert(scanf("%d", &sources[i]) == 1);
 
-  /* Construction. */
   while(E-- > 0) {
     int u, v, w;
     assert(scanf("%d %d %d", &u, &v, &w) == 3);
     graph_add_edge(graph, u, v, w);
   }
-  
-  d = (int**)malloc(S * sizeof(int*));
+
+  d = (int*)malloc(V * sizeof(int));
   assert(d != NULL);
-  for(i = 0; i < S; ++i)
-    assert((d[i] = (int*)malloc(V * sizeof(int))) != NULL);
-  
-  /* Caminhos mais curtos a partir das filiais. */
-  for(i = 0; i < S; ++i)
-    BellmanFord(graph, sources[i], d[i]);
-  
+  x = (int*)malloc(V * sizeof(int));
+  assert(x != NULL);
+  memset(x, 0, V);
+
+  /* Bellman-Ford application to the sources. */
+  for(i = 0; i < S; ++i) {
+    bellman_ford(graph, sources[i], d);
+    for(j = 0; j < V; ++j) {
+      if(d[j] == INT_MAX) x[j] = INT_MAX;
+      else if(x[j] != INT_MAX) x[j] += d[j];
+    }
+  }
+
+  /* Finding the meeting point. */
   total_cost = INT_MAX;
   for(i = 0; i < V; ++i) {
-    int sum = 0;
-    
-    for(j = 0; j < S; ++j) {
-      if (d[j][i] == INT_MAX) {
-        sum = INT_MAX;
-        break;
-      }
-      sum += d[j][i];
-    }
-    if (sum < total_cost){
-      total_cost = sum;
+    if(x[i] < total_cost) {
+      total_cost = x[i];
       meeting_point = i + 1;
     }
   }
-  
-  if(total_cost == INT_MAX){
-    printf("N");
+
+  /* Output data. */
+  if(total_cost == INT_MAX) {
+    printf("N\n");
   }
   else {
     printf("%d %d\n", meeting_point, total_cost);
-    for(i = 0; i < S; ++i){
-      printf("%d ", d[i][meeting_point - 1]);
+    antibellman_ford(graph, meeting_point, d);
+    for(i = 0; i < S; ++i) {
+      printf("%d ", d[sources[i] - 1]);
     }
+    printf("\n");
   }
-  printf("\n");
   
-  /* FREEDOM! */
-  for(i = 0; i < S; ++i)
-    free(d[i]);
-  
+  /* Free previously allocated resources. */
   free(d);
+  free(x);
   free(sources);
   graph_free(graph);
   

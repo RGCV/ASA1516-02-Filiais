@@ -14,15 +14,18 @@
 /* Defines the type of a vertex (simple int). */
 typedef int                graph_vertex_t;
 
-/* Graphs' edge. */
-typedef struct _graph_edge graph_edge_t;
+/* Enumerate values to identify graph type */
+typedef enum { GRAPH_UNDIRECTED = 0, GRAPH_DIRECTED } graph_type_e;
+
+/* Adjacency list node. */
+typedef struct _graph_node graph_node_t;
 
 /* Graph structure. */
 typedef struct _graph      graph_t;
 
 /* Function prototypes */
 /* Create a new graph. */
-graph_t     *graph_new       (int V, int E);
+graph_t     *graph_new       (int V, graph_type_e graph_type, bool weighted);
 
 /* Free memory allocated associated with the given graph. */
 void         graph_free      (graph_t *graph);
@@ -33,6 +36,12 @@ int          graph_vertices  (graph_t *graph);
 /* Returns the number of edges in the graph. */
 int          graph_edges     (graph_t *graph);
 
+/* Returns true if the graph is weighted. Returns false, otherwise. */
+bool         graph_weighted  (graph_t *graph);
+
+/* Returns the graph's type (DIRECTED or UNDIRECTED) */
+graph_type_e graph_type      (graph_t *graph);
+
 /* Adds an edge to the graph. If the graph isn't weighted, w is ignored.
   If it is, then assigns a weight w to the edge (u,v). Furthermore, if the
   graph is undirected, the weight is clearly in both ways. */
@@ -41,6 +50,10 @@ void         graph_add_edge  (graph_t *graph, graph_vertex_t u, graph_vertex_t v
 
 /* Executes the Bellman-Ford shortest path-finding algorithm given a source
   vertex s. */
-void         BellmanFord     (graph_t *graph, graph_vertex_t s, int *d);
+void         bellman_ford    (graph_t *graph, graph_vertex_t s, int *d);
+
+/* Executes the Bellman-Ford shortest path-finding algorithm given a source
+  vertex s in reverse (reverts the edges, applies it to the anti-graph). */
+void         antibellman_ford(graph_t *graph, graph_vertex_t s, int *d);
 
 #endif /* _GRAPH_H_ */
