@@ -95,10 +95,11 @@ void graph_add_edge(graph_t *graph, graph_vertex_t u, graph_vertex_t v,
   }
 }
 
-void bellman_ford(graph_t *graph, graph_vertex_t s, int *d) {
+void bellman_ford(graph_t *graph, graph_vertex_t s, int *d, bool reverse) {
   int i, j, e;
 
-  for(i = 0; i < graph->V; ++i) d[i] = INT_MAX;
+  for(i = 0; i < graph->V; ++i)
+    d[i] = INT_MAX;
   d[s - 1] = 0;
 
   for(i = 0; i < graph->V; ++i) {
@@ -108,35 +109,12 @@ void bellman_ford(graph_t *graph, graph_vertex_t s, int *d) {
       graph_node_t *node = graph->adjlist[j];
       
       while(node) {
-        if(d[j] != INT_MAX && d[node->vertex - 1] > d[j] + node->weight) {
+        graph_vertex_t u = (reverse ? node->vertex : j + 1);
+        graph_vertex_t v = (reverse ? j + 1 : node->vertex);
+        
+        if(d[u - 1] != INT_MAX && d[v - 1] > d[u - 1] + node->weight) {
           changes = true;
-          d[node->vertex - 1] = d[j] + node->weight;
-        }
-        ++e;
-        node = node->next;
-      }
-    }
-
-    if(!changes) break;
-  }
-}
-
-void antibellman_ford(graph_t *graph, graph_vertex_t s, int *d) {
-  int i, j, e;
-
-  for(i = 0; i < graph->V; ++i) d[i] = INT_MAX;
-  d[s - 1] = 0;
-
-  for(i = 0; i < graph->V; ++i) {
-    bool changes = false;
-
-    for(j = 0, e = 0; j < graph->V && e < graph->E; ++j) {
-      graph_node_t *node = graph->adjlist[j];
-      
-      while(node) {
-        if(d[node->vertex - 1] != INT_MAX && d[j] > d[node->vertex - 1] + node->weight) {
-          changes = true;
-          d[j] = d[node->vertex - 1] + node->weight;
+          d[v - 1] = d[u - 1] + node->weight;
         }
         ++e;
         node = node->next;

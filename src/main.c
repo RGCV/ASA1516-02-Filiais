@@ -41,17 +41,19 @@ int main() {
 
   /* Bellman-Ford application to the sources. */
   for(i = 0; i < S; ++i) {
-    bellman_ford(graph, sources[i], d);
+    bellman_ford(graph, sources[i], d, false);
     for(j = 0; j < V; ++j) {
-      if(d[j] == INT_MAX) x[j] = INT_MAX;
-      else if(x[j] != INT_MAX) x[j] += d[j];
+      if(d[j] == INT_MAX)
+        x[j] = INT_MAX;
+      else if(x[j] != INT_MAX)
+        x[j] += d[j];
     }
   }
 
   /* Finding the meeting point. */
   total_cost = INT_MAX;
   for(i = 0; i < V; ++i) {
-    if(x[i] < total_cost) {
+    if(total_cost > x[i]) {
       total_cost = x[i];
       meeting_point = i + 1;
     }
@@ -63,7 +65,7 @@ int main() {
   }
   else {
     printf("%d %d\n", meeting_point, total_cost);
-    antibellman_ford(graph, meeting_point, d);
+    bellman_ford(graph, meeting_point, d, true);
     for(i = 0; i < S; ++i) {
       printf("%d ", d[sources[i] - 1]);
     }

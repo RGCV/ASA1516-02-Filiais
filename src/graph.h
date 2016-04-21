@@ -49,11 +49,10 @@ void         graph_add_edge  (graph_t *graph, graph_vertex_t u, graph_vertex_t v
                                int w);
 
 /* Executes the Bellman-Ford shortest path-finding algorithm given a source
-  vertex s. */
-void         bellman_ford    (graph_t *graph, graph_vertex_t s, int *d);
-
-/* Executes the Bellman-Ford shortest path-finding algorithm given a source
-  vertex s in reverse (reverts the edges, applies it to the anti-graph). */
-void         antibellman_ford(graph_t *graph, graph_vertex_t s, int *d);
+  vertex s. If reverse is true, the algorithm uses the edges in the opposite
+  direction, simulating an application of the Bellman-Ford algorithm over the
+  antigraph. */
+void         bellman_ford    (graph_t *graph, graph_vertex_t s, int *d,
+                               bool reverse);
 
 #endif /* _GRAPH_H_ */
